@@ -1,0 +1,15 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="pmurray_at_bigpond_dot_com.arddrive.MainActivity">
+    <item
+        android:id="@+id/action_moon_schedule_tab"
+        android:title="@string/action_moon_schedule_tab"
+        android:titleCondensed="@string/action_moon_schedule_tab_condensed"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/action_moon_appearance_tab"
+        android:title="@string/action_moon_apperance_tab"
+        android:titleCondensed="@string/action_moon_apperance_tab_condensed"
+        app:showAsAction="ifRoom" />
+</menu>

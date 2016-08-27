@@ -18,10 +18,10 @@ The parameters can be set via bluetooth using the corresponding Android app. All
 
 | Data | Arduino Pin | Connect to |
 | ------- | ------- | ------- |
-| neopixel out | Pin *6* | neopixel in |
+| neopixel out | Pin 6 | neopixel in |
 | I2C | SDA/SCL (the pins vary depending on the board) | RTC SDA/SCL  |
-| Bluetooth TX | Pin ?? | Bluetooth module RX |
-| Bluetooth RX | Pin ?? | Bluettoth module TX |
+| Bluetooth RX | Pin 8 | Bluetooth module TX |
+| Bluetooth TX | Pin 9 | Bluetooth module RX |
 
 # License
 
