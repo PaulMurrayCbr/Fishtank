@@ -12,4 +12,9 @@
         android:title="@string/action_moon_apperance_tab"
         android:titleCondensed="@string/action_moon_apperance_tab_condensed"
         app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/action_get_status"
+        android:title="@string/action_moon_get_status"
+        android:titleCondensed="@string/action_moon_get_status_condensed"
+        app:showAsAction="ifRoom" />
 </menu>

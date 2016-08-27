@@ -19,4 +19,6 @@
     <string name="action_moon_schedule_tab">Moon schedule</string>
     <string name="action_moon_schedule_tab_condensed">Schedule</string>
 
+    <string name="action_moon_get_status">Refresh arduino status</string>
+    <string name="action_moon_get_status_condensed">Refresh</string>
 </resources>

@@ -85,7 +85,7 @@ class MoonStuff {
     const byte pin;
     const Adafruit_NeoPixel pixels;
     long timeofdaySec = 0;
-    float moonWidth;
+    int moonWidth;
     float r, g, b;
     long moonriseSec = 16L * 60L * 60L;
     long moonsetSec = 4L * 60L * 60L;
@@ -135,13 +135,23 @@ class MoonStuff {
       drawMoon();
     }
 
-    void setWidth(float newWidth) {
+    void setWidth(int newWidth) {
       moonWidth = newWidth;
       drawMoon();
     }
 
     void setBrightness(byte brightness) {
       pixels.setBrightness(brightness);
+      drawMoon();
+    }
+
+    void setMoonriseSec(int _moonriseSec) {
+      moonriseSec = _moonriseSec;
+      drawMoon();
+    }
+
+    void setMoonsetSec(int _moonsetSec) {
+      moonsetSec = _moonsetSec;
       drawMoon();
     }
 
@@ -175,7 +185,7 @@ class MoonStuff {
         for (int i = moonCenter - moonWidth ; i <= moonCenter + moonWidth ; i ++ ) {
           if (i < 0 || i >= pixels.numPixels()) continue;
 
-          float pp = (i - moonCenter) / (moonWidth / 2);
+          float pp = (i - moonCenter) / ((float)moonWidth / 2);
           if (pp <= -1 || pp >= 1) continue;
 
           // scale by the width of the lunar disk, and don't take square root
@@ -596,12 +606,26 @@ class MoonClock : public ClockStuff {
     }
 };
 
+struct StatusBuffer {
+  byte messageMark[1];
+  byte rgb[3];
+  byte numpixels[2];
+  byte moonWidth[2];
+  byte moonBright[1];  
+  byte moonrise[4];  
+  byte moonset[4];  
+  byte time[4];  
+};
+
 class MoonController : public BtReader::Callback {
+  struct StatusBuffer buf;
+  
   public:
     const ClockStuff &clock;
     const MoonStuff &moon;
+    const BtWriter &writer;
 
-    MoonController(ClockStuff &clock,  MoonStuff &moon) : clock(clock), moon(moon) {}
+    MoonController(ClockStuff &clock,  MoonStuff &moon, BtWriter &writer) : clock(clock), moon(moon), writer(writer) {}
 
     void setup() {
     }
@@ -644,8 +668,29 @@ class MoonController : public BtReader::Callback {
       if (ct == 0) return;
 
       switch (buf[0]) {
+        case '?':
+          transmitStatus();
+          break;
         case 'C':
           moon.setColor(buf[1], buf[2], buf[3]);
+          break;
+        case 'T':
+          //clock.setTime(((uint32_t)(buf[1]) << 24) | ((uint32_t)(buf[2]) << 16) | ((uint32_t)(buf[3]) << 8) | ((uint32_t)(buf[4]) << 0));
+          break;
+        case 'R':
+          moon.setMoonriseSec(((uint32_t)(buf[1]) << 24) | ((uint32_t)(buf[2]) << 16) | ((uint32_t)(buf[3]) << 8) | ((uint32_t)(buf[4]) << 0));
+          break;
+        case 'S':
+          moon.setMoonsetSec(((uint32_t)(buf[1]) << 24) | ((uint32_t)(buf[2]) << 16) | ((uint32_t)(buf[3]) << 8) | ((uint32_t)(buf[4]) << 0));
+          break;
+        case 'W':
+          moon.setWidth(((uint16_t)(buf[1]) << 8) | ((uint16_t)(buf[2]) << 0));
+          break;
+        case 'B':
+          moon.setBrightness(buf[1]);
+          break;
+        case 'N':
+          moon.setNumPixels(((uint16_t)(buf[1]) << 8) | ((uint16_t)(buf[2]) << 0));
           break;
       }
 
@@ -682,20 +727,46 @@ class MoonController : public BtReader::Callback {
 #endif
     }
 
+    
 
+    void transmitStatus() {
+      buf.messageMark[0] = '?';
+      buf.rgb[0] = moon.r;
+      buf.rgb[1] = moon.g;
+      buf.rgb[2] = moon.b;
+      buf.numpixels[0] = moon.pixels.numPixels() >> 8;
+      buf.numpixels[1] = moon.pixels.numPixels();
+      buf.moonWidth[0] = moon.moonWidth >> 8;
+      buf.moonWidth[1] = moon.moonWidth;
+      buf.moonBright[0] = moon.pixels.getBrightness();
+      buf.moonrise[0] = moon.moonriseSec >> 24;
+      buf.moonrise[1] = moon.moonriseSec >> 16;
+      buf.moonrise[2] = moon.moonriseSec >> 8;
+      buf.moonrise[3] = moon.moonriseSec >> 0;
+      buf.moonset[0] = moon.moonsetSec >> 24;
+      buf.moonset[1] = moon.moonsetSec >> 16;
+      buf.moonset[2] = moon.moonsetSec >> 8;
+      buf.moonset[3] = moon.moonsetSec >> 0;
+      buf.time[0] = clock.timeofdaySec >> 24;
+      buf.time[1] = clock.timeofdaySec >> 16;
+      buf.time[2] = clock.timeofdaySec >> 8;
+      buf.time[3] = clock.timeofdaySec >> 0;
+
+      writer.write((void *)&buf, 0, sizeof(buf));
+    }
 };
 
 // PINOUT
 
-MoonStuff moonStuff(6);
-MoonClock moonClock(moonStuff);
-MoonController moonController(moonClock, moonStuff);
-
 const byte txPin = 9;
 const byte rxPin = 8;
 SoftwareSerial bt(rxPin, txPin);
-BtReader reader(bt, moonController);
+MoonStuff moonStuff(6);
+MoonClock moonClock(moonStuff);
 BtWriter writer(bt);
+MoonController moonController(moonClock, moonStuff, writer);
+
+BtReader reader(bt, moonController);
 
 
 void setup() {
