@@ -19,12 +19,18 @@ const long SECSPERDAY = 60L * 60L * 24L;
 
 class ClockStuff {
   public:
-    uint32_t ms;
+
 #ifdef DEBUG
-    const uint32_t tickMs = 121L;
+    boolean fast = true;
 #else
-    const uint32_t tickMs = 60L * 616L; // golden ratio
+    boolean fast = false;
 #endif
+
+
+    uint32_t ms;
+
+    const uint32_t fastTickMs = 121L;
+    const uint32_t slowTickMs = 60L * 616L; // golden ratio
 
     long timeofdaySec; // 60 * 24
 
@@ -45,7 +51,7 @@ class ClockStuff {
     }
 
     void loop() {
-      if (millis() - ms > tickMs) {
+      if (millis() - ms > fast ? fastTickMs : slowTickMs) {
         tick();
         ms = millis();
       }
@@ -66,10 +72,10 @@ class ClockStuff {
 
       timeofdaySec = ((long)hour) * 60L * 60L + ((long)minute) * 60L + (long) second;
 
-#ifdef DEBUG
-      // compress a day into 30 seconds
-      timeofdaySec = (timeofdaySec * 24L * 60L) % SECSPERDAY;
-#endif
+      if (fast) {
+        // compress a day into 30 seconds
+        timeofdaySec = (timeofdaySec * 24L * 60L * 2) % SECSPERDAY;
+      }
 
       if (timeofdaySec != prevTimeofdaySec) {
         newTime();
@@ -100,10 +106,10 @@ class MoonStuff {
     }
 
     void setup() {
-      setNumPixels(30 * 4); // I have 4m of neopixels
+      setNumPixels(30 * 2); // 2m fishtank
       setColor(0xE0, 0xE0, 0xFF);
-      setWidth(12.25);
-      setBrightness(8);
+      setWidth(4.25);
+      setBrightness(4);
       pixels.begin();
       drawMoon();
 
@@ -596,19 +602,20 @@ struct StatusBuffer {
   byte rgb[3];
   byte numpixels[2];
   byte moonWidth[2];
-  byte moonBright[1];  
-  byte moonrise[4];  
-  byte moonset[4];  
-  byte time[4];  
+  byte moonBright[1];
+  byte moonrise[4];
+  byte moonset[4];
+  byte time[4];
+  byte flags[1];
 };
 
 class MoonController : public BtReader::Callback {
-  struct StatusBuffer buf;
-  
+    struct StatusBuffer buf;
+
   public:
-    const ClockStuff &clock;
-    const MoonStuff &moon;
-    const BtWriter &writer;
+    ClockStuff &clock;
+    MoonStuff &moon;
+    BtWriter &writer;
 
     MoonController(ClockStuff &clock,  MoonStuff &moon, BtWriter &writer) : clock(clock), moon(moon), writer(writer) {}
 
@@ -655,6 +662,9 @@ class MoonController : public BtReader::Callback {
       switch (buf[0]) {
         case '?':
           transmitStatus();
+          break;
+        case '!' :
+          clock.fast = !clock.fast;
           break;
         case 'C':
           moon.setColor(buf[1], buf[2], buf[3]);
@@ -712,7 +722,7 @@ class MoonController : public BtReader::Callback {
 #endif
     }
 
-    
+
 
     void transmitStatus() {
       buf.messageMark[0] = '?';
@@ -736,6 +746,8 @@ class MoonController : public BtReader::Callback {
       buf.time[1] = clock.timeofdaySec >> 16;
       buf.time[2] = clock.timeofdaySec >> 8;
       buf.time[3] = clock.timeofdaySec >> 0;
+
+      buf.flags[0] = (clock.fast ? 1 : 0);
 
       writer.write((void *)&buf, 0, sizeof(buf));
     }
