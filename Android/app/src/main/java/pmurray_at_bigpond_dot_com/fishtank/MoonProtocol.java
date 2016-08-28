@@ -23,25 +23,25 @@ public class MoonProtocol {
         BluetoothService.startActionSendMessage(context, msg);
     }
 
-    private static void sendShortMessage(Activity context, byte action, short n) {
-        byte[] msg = new byte[5];
+    private static void sendByteMessage(Activity context, byte action, byte n) {
+        byte[] msg = new byte[2];
         msg[0] = action;
-        msg[3] = (byte) (n >> 8);
-        msg[4] = (byte) (n >> 0);
+        msg[1] = n;
         BluetoothService.startActionSendMessage(context, msg);
     }
 
-    private static void sendByteMessage(Activity context, byte action, short n) {
-        byte[] msg = new byte[5];
+
+    private static void sendShortMessage(Activity context, byte action, short n) {
+        byte[] msg = new byte[3];
         msg[0] = action;
-        msg[3] = (byte) (n >> 8);
-        msg[4] = (byte) (n >> 0);
+        msg[1] = (byte) (n >> 8);
+        msg[2] = (byte) (n >> 0);
         BluetoothService.startActionSendMessage(context, msg);
     }
 
     private static void sendTimeMessage(Activity context, byte action, int time) {
-        while(time < 0) time += 60*60*24;
-        time %= 60*60*24;
+        while (time < 0) time += 60 * 60 * 24;
+        time %= 60 * 60 * 24;
         byte[] msg = new byte[5];
         msg[0] = action;
         msg[1] = (byte) (time >> 24);

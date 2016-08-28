@@ -20,19 +20,13 @@ const long SECSPERDAY = 60L * 60L * 24L;
 class ClockStuff {
   public:
 
-#ifdef DEBUG
-    boolean fast = true;
-#else
-    boolean fast = false;
-#endif
-
-
     uint32_t ms;
 
     const uint32_t fastTickMs = 121L;
     const uint32_t slowTickMs = 60L * 616L; // golden ratio
 
     long timeofdaySec; // 60 * 24
+    long timeofdayOffsetSec = 0;
 
     inline byte decToBcd(byte val)
     {
@@ -51,10 +45,15 @@ class ClockStuff {
     }
 
     void loop() {
-      if (millis() - ms > fast ? fastTickMs : slowTickMs) {
+      if (millis() - ms > slowTickMs) {
         tick();
         ms = millis();
       }
+    }
+
+    void setTime(long targetTime) {
+      timeofdayOffsetSec = (SECSPERDAY * 2 + targetTime - timeofdaySec) % SECSPERDAY;
+      newTime((timeofdaySec + timeofdayOffsetSec) % SECSPERDAY);
     }
 
     void tick() {
@@ -72,17 +71,12 @@ class ClockStuff {
 
       timeofdaySec = ((long)hour) * 60L * 60L + ((long)minute) * 60L + (long) second;
 
-      if (fast) {
-        // compress a day into 30 seconds
-        timeofdaySec = (timeofdaySec * 24L * 60L * 2) % SECSPERDAY;
-      }
-
       if (timeofdaySec != prevTimeofdaySec) {
-        newTime();
+        newTime((timeofdaySec + timeofdayOffsetSec) % SECSPERDAY);
       }
     }
 
-    virtual void newTime() = 0;
+    virtual void newTime(long calculatedTimeSec) = 0;
 };
 
 class MoonStuff {
@@ -130,6 +124,8 @@ class MoonStuff {
       if (n < 1) return;
       if (n > 1000) return;
 
+      pixels.clear();
+      pixels.show();
       pixels.updateLength(n);
       drawMoon();
     }
@@ -153,11 +149,13 @@ class MoonStuff {
 
     void setMoonriseSec(int _moonriseSec) {
       moonriseSec = _moonriseSec;
+      deriveNightlen();
       drawMoon();
     }
 
     void setMoonsetSec(int _moonsetSec) {
       moonsetSec = _moonsetSec;
+      deriveNightlen();
       drawMoon();
     }
 
@@ -171,9 +169,10 @@ class MoonStuff {
     void drawMoon() {
       pixels.clear();
 
-      long tt = timeofdaySec;
-      if (tt < moonriseSec) tt += SECSPERDAY;
-      tt -= moonriseSec;
+      long tt = timeofdaySec - moonriseSec;
+      while(tt < 0) tt += SECSPERDAY;
+      tt = tt % SECSPERDAY;
+
       if (tt <= nightLenSec) {
         float moonCenter = (float) tt / nightLenSec * pixels.numPixels();
 
@@ -592,8 +591,8 @@ class MoonClock : public ClockStuff {
 
     MoonClock(MoonStuff &moonStuff) : moonStuff(moonStuff) {}
 
-    void newTime() {
-      moonStuff.setTimeSec(timeofdaySec);
+    void newTime(long calculatedTimeSec) {
+      moonStuff.setTimeSec(calculatedTimeSec);
     }
 };
 
@@ -606,7 +605,6 @@ struct StatusBuffer {
   byte moonrise[4];
   byte moonset[4];
   byte time[4];
-  byte flags[1];
 };
 
 class MoonController : public BtReader::Callback {
@@ -623,6 +621,30 @@ class MoonController : public BtReader::Callback {
     }
 
     void loop() {
+    }
+
+    uint8_t asByte(byte *buf) {
+      uint8_t v = (uint8_t)buf[1];
+      logp(' ');
+      logp(v);
+      logp(' ');
+      return v;
+    }
+
+    uint16_t asInt(byte *buf) {
+      uint16_t v = ((uint16_t)(buf[1]) << 8) | ((uint16_t)(buf[2]) << 0);
+      logp(' ');
+      logp(v);
+      logp(' ');
+      return v;
+    }
+
+    uint32_t asLong(byte *buf) {
+      uint32_t v = ((uint32_t)(buf[1]) << 24) | ((uint32_t)(buf[2]) << 16) | ((uint32_t)(buf[3]) << 8) | ((uint32_t)(buf[4]) << 0);
+      logp(' ');
+      logp(v);
+      logp(' ');
+      return v;
     }
 
     void gotBytes(byte *buf, int ct) {
@@ -654,7 +676,8 @@ class MoonController : public BtReader::Callback {
         Serial.print(' ');
       }
 
-      Serial.println('>');
+      Serial.print('>');
+      Serial.print(' ');
 #endif
 
       if (ct == 0) return;
@@ -663,31 +686,31 @@ class MoonController : public BtReader::Callback {
         case '?':
           transmitStatus();
           break;
-        case '!' :
-          clock.fast = !clock.fast;
-          break;
         case 'C':
           moon.setColor(buf[1], buf[2], buf[3]);
           break;
         case 'T':
-          //clock.setTime(((uint32_t)(buf[1]) << 24) | ((uint32_t)(buf[2]) << 16) | ((uint32_t)(buf[3]) << 8) | ((uint32_t)(buf[4]) << 0));
+          clock.setTime(asLong(buf));
           break;
         case 'R':
-          moon.setMoonriseSec(((uint32_t)(buf[1]) << 24) | ((uint32_t)(buf[2]) << 16) | ((uint32_t)(buf[3]) << 8) | ((uint32_t)(buf[4]) << 0));
+          moon.setMoonriseSec(asLong(buf));
           break;
         case 'S':
-          moon.setMoonsetSec(((uint32_t)(buf[1]) << 24) | ((uint32_t)(buf[2]) << 16) | ((uint32_t)(buf[3]) << 8) | ((uint32_t)(buf[4]) << 0));
+          moon.setMoonsetSec(asLong(buf));
           break;
         case 'W':
-          moon.setWidth(((uint16_t)(buf[1]) << 8) | ((uint16_t)(buf[2]) << 0));
+          moon.setWidth(asInt(buf));
           break;
         case 'B':
-          moon.setBrightness(buf[1]);
+          moon.setBrightness(asByte(buf));
           break;
         case 'N':
-          moon.setNumPixels(((uint16_t)(buf[1]) << 8) | ((uint16_t)(buf[2]) << 0));
+          moon.setNumPixels(asInt(buf));
           break;
       }
+#ifdef DEBUG
+      Serial.println();
+#endif
 
     }
 
@@ -746,8 +769,6 @@ class MoonController : public BtReader::Callback {
       buf.time[1] = clock.timeofdaySec >> 16;
       buf.time[2] = clock.timeofdaySec >> 8;
       buf.time[3] = clock.timeofdaySec >> 0;
-
-      buf.flags[0] = (clock.fast ? 1 : 0);
 
       writer.write((void *)&buf, 0, sizeof(buf));
     }
