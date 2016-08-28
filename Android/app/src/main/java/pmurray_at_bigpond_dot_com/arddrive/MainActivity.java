@@ -14,20 +14,15 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Base64;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.ListView;
-import android.widget.SeekBar;
 import android.widget.TextView;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,7 +31,7 @@ import static pmurray_at_bigpond_dot_com.arddrive.BluetoothService.*;
 public class MainActivity extends AppCompatActivity {
     private static final int RETRY_CHOOSE_BLUETOOTH = 0xBEEF + 1;
 
-    static class MyThing {
+    static class BtBroadcastBean {
 
         final String mac;
         final String act;
@@ -44,7 +39,7 @@ public class MainActivity extends AppCompatActivity {
         final String uuid;
         final String txt;
 
-        MyThing(Intent msg) {
+        BtBroadcastBean(Intent msg) {
             if (msg.hasExtra(BluetoothDevice.EXTRA_DEVICE)) {
                 BluetoothDevice device =
                         msg.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
@@ -108,15 +103,15 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    static class BroadcastsAdapter extends ArrayAdapter<MyThing> {
-        public BroadcastsAdapter(Context context, List<MyThing> messages) {
+    static class BroadcastsAdapter extends ArrayAdapter<BtBroadcastBean> {
+        public BroadcastsAdapter(Context context, List<BtBroadcastBean> messages) {
             super(context, R.layout.device_list_item, messages);
         }
 
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
             // Get the data item for this position
-            MyThing msg = getItem(position);
+            BtBroadcastBean msg = getItem(position);
             // Check if an existing view is being reused, otherwise inflate the view
             if (convertView == null) {
                 convertView = LayoutInflater.from(getContext()).inflate(R.layout.broadcast_list_item, parent, false);
@@ -151,7 +146,7 @@ public class MainActivity extends AppCompatActivity {
             while (broadcastsAdapter.getCount() >= 20) {
                 broadcastsAdapter.remove(broadcastsAdapter.getItem(0));
             }
-            broadcastsAdapter.add(new MyThing(intent));
+            broadcastsAdapter.add(new BtBroadcastBean(intent));
         }
     };
 
@@ -162,7 +157,7 @@ public class MainActivity extends AppCompatActivity {
             while (broadcastsAdapter.getCount() >= 20) {
                 broadcastsAdapter.remove(broadcastsAdapter.getItem(0));
             }
-            broadcastsAdapter.add(new MyThing(intent));
+            broadcastsAdapter.add(new BtBroadcastBean(intent));
         }
     };
 
@@ -176,7 +171,7 @@ public class MainActivity extends AppCompatActivity {
 
         // fragment goes here?
 
-        broadcastsAdapter = new BroadcastsAdapter(this, new ArrayList<MyThing>());
+        broadcastsAdapter = new BroadcastsAdapter(this, new ArrayList<BtBroadcastBean>());
         ListView broadcastList = (ListView) findViewById(R.id.broadcastList);
         broadcastList.setAdapter(broadcastsAdapter);
     }
@@ -184,9 +179,10 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        LocalBroadcastManager.getInstance(getApplicationContext()).registerReceiver(broadcastReciever, addAllBroadcasts(new IntentFilter()));
 
-        registerReceiver(btReceiver, lowLevelBtFiter());
+        LocalBroadcastManager.getInstance(getApplicationContext()).registerReceiver(broadcastReciever, addBroadcastsNotIncludingBytes(new IntentFilter()));
+
+        registerReceiver(btReceiver, BluetoothService.addBluetoothBroadcasts(new IntentFilter()));
     }
 
     @Override
@@ -276,20 +272,4 @@ public class MainActivity extends AppCompatActivity {
                 break;
         }
     }
-
-    protected IntentFilter lowLevelBtFiter() {
-        IntentFilter f = new IntentFilter();
-        f.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
-        f.addAction(BluetoothDevice.ACTION_ACL_DISCONNECT_REQUESTED);
-        f.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
-        f.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
-        f.addAction(BluetoothDevice.ACTION_CLASS_CHANGED);
-        f.addAction(BluetoothDevice.ACTION_FOUND);
-        f.addAction(BluetoothDevice.ACTION_NAME_CHANGED);
-        f.addAction(BluetoothDevice.ACTION_PAIRING_REQUEST);
-        f.addAction(BluetoothDevice.ACTION_UUID);
-        return f;
-    }
-
-
 }

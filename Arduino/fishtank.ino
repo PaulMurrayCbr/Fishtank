@@ -156,14 +156,6 @@ class MoonStuff {
     }
 
     void setTimeSec(long s) {
-      logp(s);
-      logp(' ');
-      logp(s / 60 / 60);
-      logp(':');
-      logp((s / 60) % 60);
-      logp(':');
-      logp(s % 60);
-      logln();
       if (s != timeofdaySec) {
         timeofdaySec = s;
         drawMoon();
@@ -179,9 +171,6 @@ class MoonStuff {
       if (tt <= nightLenSec) {
         float moonCenter = (float) tt / nightLenSec * pixels.numPixels();
 
-        logp("moon at ");
-        logp(moonCenter);
-
         for (int i = moonCenter - moonWidth ; i <= moonCenter + moonWidth ; i ++ ) {
           if (i < 0 || i >= pixels.numPixels()) continue;
 
@@ -195,11 +184,7 @@ class MoonStuff {
           pixels.setPixelColor(i, pixels.Color(r * brite, g * brite, b * brite));
         }
       }
-      else {
-        logp("moon below horizon");
-      }
 
-      logln(" SHOW");
       while (!pixels.canShow()) delay(1);
       pixels.show();
     }
@@ -515,7 +500,7 @@ class BtWriter {
       checksum.add(bytes[1]);
       checksum.add(bytes[2]);
 
-      uint32_t stage = (((uint32_t)bytes[0]) << 16) | (((uint32_t)bytes[1]) << 8) | (((uint32_t)bytes[2]) << 0);
+      uint32_t stage = (((uint32_t)(byte)bytes[0]) << 16) | (((uint32_t)(byte)bytes[1]) << 8) | (((uint32_t)(byte)bytes[2]) << 0);
 
       putCh(to64((stage >> 18) & 0x3F));
       putCh(to64((stage >> 12) & 0x3F));
@@ -527,7 +512,7 @@ class BtWriter {
       checksum.add(bytes[0]);
       checksum.add(bytes[1]);
 
-      uint32_t stage = (((uint32_t)bytes[0]) << 16) | (((uint32_t)bytes[1]) << 8) ;
+      uint32_t stage = (((uint32_t)(byte)bytes[0]) << 16) | (((uint32_t)(byte)bytes[1]) << 8) ;
 
       putCh(to64((stage >> 18) & 0x3F));
       putCh(to64((stage >> 12) & 0x3F));
@@ -538,7 +523,7 @@ class BtWriter {
     void put1(char *bytes) {
       checksum.add(*bytes);
 
-      uint32_t stage = (((uint32_t)bytes[0]) << 16) ;
+      uint32_t stage = (((uint32_t)(byte)bytes[0]) << 16) ;
 
       putCh(to64((stage >> 18) & 0x3F));
       putCh(to64((stage >> 12) & 0x3F));
@@ -559,7 +544,7 @@ class BtWriter {
       else if (in < 52) return 'a' + in - 26;
       else if (in < 62) return '0' + in - 52;
       else if (in == 62) return '+';
-      else if (in == 62) return '/';
+      else if (in == 63) return '/';
       else return '?';
     }
 
@@ -578,16 +563,16 @@ class BtWriter {
 
       if (bufCt > 0) {
         buf[bufCt] = '\0';
-        Serial.print("writing to BT: ");
-        Serial.println(buf);
+        logp("writing to BT: ");
 
         for (int i = 0; i < bufCt; i++) {
-          Serial.print(buf[i]);
+          logp(buf[i]);
           out.write(buf[i]);
           delay(100);
         }
 
         bufCt = 0;
+        logln();
       }
       out.flush();
     }

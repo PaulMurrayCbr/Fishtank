@@ -380,6 +380,21 @@ public class BluetoothService extends Service {
         return f;
     }
 
+    public static IntentFilter addBroadcastsNotIncludingBytes(IntentFilter f) {
+        f.addAction(BROADCAST_CONNECTED);
+        f.addAction(BROADCAST_EXCEPTION);
+        f.addAction(BROADCAST_DISCONNECTED);
+
+        f.addAction(BROADCAST_MESSAGE_RECEIVED);
+        f.addAction(BROADCAST_BAD_MESSAGE);
+
+        f.addAction(BROADCAST_HEARTBEAT_ACQUIRED);
+        f.addAction(BROADCAST_HEARTBEAT_RECEIVED);
+        f.addAction(BROADCAST_HEARTBEAT_LOST);
+
+        return f;
+    }
+
     public static IntentFilter addMessageBroadcasts(IntentFilter f) {
         f.addAction(BROADCAST_MESSAGE_RECEIVED);
         f.addAction(BROADCAST_BAD_MESSAGE);
@@ -388,6 +403,21 @@ public class BluetoothService extends Service {
 
         return f;
     }
+
+    public static IntentFilter addBluetoothBroadcasts(IntentFilter f)  {
+        f.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
+        f.addAction(BluetoothDevice.ACTION_ACL_DISCONNECT_REQUESTED);
+        f.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
+        f.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
+        f.addAction(BluetoothDevice.ACTION_CLASS_CHANGED);
+        f.addAction(BluetoothDevice.ACTION_FOUND);
+        f.addAction(BluetoothDevice.ACTION_NAME_CHANGED);
+        f.addAction(BluetoothDevice.ACTION_PAIRING_REQUEST);
+        f.addAction(BluetoothDevice.ACTION_UUID);
+
+        return f;
+    }
+
 
     public static void startActionConnect(Context context, BluetoothDevice d, UUID uuid) {
         Intent intent = new Intent(context, BluetoothService.class);
