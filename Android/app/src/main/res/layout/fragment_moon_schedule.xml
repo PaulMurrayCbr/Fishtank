@@ -1,13 +1,78 @@
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@drawable/round_border"
+    android:drawablePadding="3dp"
+    android:padding="3dp"
+    android:stretchColumns="1"
     tools:context="pmurray_at_bigpond_dot_com.fishtank.MoonScheduleFragment">
 
-    <!-- TODO: Update blank fragment layout -->
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="@string/hello_moon_schedule_fragment" />
+    <TableRow>
+        <TextView
+            android:id="@+id/moonriseBarLabel"
+            android:background="@drawable/round_border"
+            android:drawablePadding="3dp"
+            android:padding="3dp"
+            android:text="@string/moonrise" />
 
-</FrameLayout>
+        <SeekBar
+            android:id="@+id/moonriseBar"
+            android:background="@drawable/round_border"
+            android:drawablePadding="3dp"
+            android:padding="3dp" />
+
+        <TextView
+            android:id="@+id/moonriseBarValue"
+            android:background="@drawable/round_border"
+            android:drawablePadding="3dp"
+            android:padding="3dp"
+            />
+    </TableRow>
+
+    <TableRow>
+        <TextView
+            android:id="@+id/moonTimeBarLabel"
+            android:background="@drawable/round_border"
+            android:drawablePadding="3dp"
+            android:padding="3dp"
+            android:text="@string/moon_time" />
+
+        <SeekBar
+            android:id="@+id/moonTimeBar"
+            android:background="@drawable/round_border"
+            android:drawablePadding="3dp"
+            android:padding="3dp" />
+
+        <TextView
+            android:id="@+id/moonTimeBarValue"
+            android:background="@drawable/round_border"
+            android:drawablePadding="3dp"
+            android:padding="3dp"
+            />
+    </TableRow>
+
+    <TableRow>
+        <TextView
+            android:id="@+id/moonsetBarLabel"
+            android:background="@drawable/round_border"
+            android:drawablePadding="3dp"
+            android:padding="3dp"
+            android:text="@string/moonset" />
+
+        <SeekBar
+            android:id="@+id/moonsetBar"
+            android:background="@drawable/round_border"
+            android:drawablePadding="3dp"
+            android:padding="3dp" />
+
+        <TextView
+            android:id="@+id/moonsetBarValue"
+            android:background="@drawable/round_border"
+            android:drawablePadding="3dp"
+            android:padding="3dp"
+            />
+    </TableRow>
+
+</TableLayout>

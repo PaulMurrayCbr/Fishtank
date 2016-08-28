@@ -24,7 +24,9 @@
     <string name="action_moon_schedule_tab_condensed">Schedule</string>
 
     <!-- moon schedule -->
-    <string name="hello_moon_schedule_fragment">Moon schedule fragment</string>
+    <string name="moonrise">Moonrise</string>
+    <string name="moonset">Moonset</string>
+    <string name="moon_time">Current time</string>
 
     <!-- moon appearance -->
     <string name="strip_length"># Pixels</string>
