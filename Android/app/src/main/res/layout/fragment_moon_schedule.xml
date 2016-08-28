@@ -10,6 +10,7 @@
     tools:context="pmurray_at_bigpond_dot_com.fishtank.MoonScheduleFragment">
 
     <TableRow>
+
         <TextView
             android:id="@+id/moonriseBarLabel"
             android:background="@drawable/round_border"
@@ -27,11 +28,11 @@
             android:id="@+id/moonriseBarValue"
             android:background="@drawable/round_border"
             android:drawablePadding="3dp"
-            android:padding="3dp"
-            />
+            android:padding="3dp" />
     </TableRow>
 
     <TableRow>
+
         <TextView
             android:id="@+id/moonTimeBarLabel"
             android:background="@drawable/round_border"
@@ -49,11 +50,11 @@
             android:id="@+id/moonTimeBarValue"
             android:background="@drawable/round_border"
             android:drawablePadding="3dp"
-            android:padding="3dp"
-            />
+            android:padding="3dp" />
     </TableRow>
 
     <TableRow>
+
         <TextView
             android:id="@+id/moonsetBarLabel"
             android:background="@drawable/round_border"
@@ -71,8 +72,14 @@
             android:id="@+id/moonsetBarValue"
             android:background="@drawable/round_border"
             android:drawablePadding="3dp"
-            android:padding="3dp"
-            />
+            android:padding="3dp" />
     </TableRow>
+
+
+    <ToggleButton
+        android:id="@+id/moonFastTime"
+        android:textOff="Normal Speed"
+        android:textOn="Fast Speed" />
+
 
 </TableLayout>

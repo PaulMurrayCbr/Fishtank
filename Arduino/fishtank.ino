@@ -28,6 +28,12 @@ class ClockStuff {
     long timeofdaySec; // 60 * 24
     long timeofdayOffsetSec = 0;
 
+#ifdef DEBUG
+    boolean fast = true;
+#else
+    boolean fast = false;
+#endif
+
     inline byte decToBcd(byte val)
     {
       return ( (val / 10 * 16) + (val % 10) );
@@ -45,7 +51,7 @@ class ClockStuff {
     }
 
     void loop() {
-      if (millis() - ms > slowTickMs) {
+      if (millis() - ms > fast ? fastTickMs : slowTickMs) {
         tick();
         ms = millis();
       }
@@ -54,6 +60,11 @@ class ClockStuff {
     void setTime(long targetTime) {
       timeofdayOffsetSec = (SECSPERDAY * 2 + targetTime - timeofdaySec) % SECSPERDAY;
       newTime((timeofdaySec + timeofdayOffsetSec) % SECSPERDAY);
+    }
+
+    void setFast(boolean f) {
+      fast = f;
+      tick();
     }
 
     void tick() {
@@ -70,6 +81,10 @@ class ClockStuff {
       long prevTimeofdaySec = timeofdaySec;
 
       timeofdaySec = ((long)hour) * 60L * 60L + ((long)minute) * 60L + (long) second;
+
+      if (fast) {
+        timeofdaySec = (timeofdaySec * 24 * 60 * 2) % SECSPERDAY;
+      }
 
       if (timeofdaySec != prevTimeofdaySec) {
         newTime((timeofdaySec + timeofdayOffsetSec) % SECSPERDAY);
@@ -169,9 +184,7 @@ class MoonStuff {
     void drawMoon() {
       pixels.clear();
 
-      long tt = timeofdaySec - moonriseSec;
-      while(tt < 0) tt += SECSPERDAY;
-      tt = tt % SECSPERDAY;
+      long tt = (timeofdaySec - moonriseSec + SECSPERDAY * 2) % SECSPERDAY;
 
       if (tt <= nightLenSec) {
         float moonCenter = (float) tt / nightLenSec * pixels.numPixels();
@@ -605,6 +618,7 @@ struct StatusBuffer {
   byte moonrise[4];
   byte moonset[4];
   byte time[4];
+  byte flags[1];
 };
 
 class MoonController : public BtReader::Callback {
@@ -685,6 +699,9 @@ class MoonController : public BtReader::Callback {
       switch (buf[0]) {
         case '?':
           transmitStatus();
+          break;
+        case '!':
+          clock.setFast(buf[1] ? true : false);
           break;
         case 'C':
           moon.setColor(buf[1], buf[2], buf[3]);
@@ -769,6 +786,7 @@ class MoonController : public BtReader::Callback {
       buf.time[1] = clock.timeofdaySec >> 16;
       buf.time[2] = clock.timeofdaySec >> 8;
       buf.time[3] = clock.timeofdaySec >> 0;
+      buf.flags[0] = (clock.fast ? 1 : 0);
 
       writer.write((void *)&buf, 0, sizeof(buf));
     }

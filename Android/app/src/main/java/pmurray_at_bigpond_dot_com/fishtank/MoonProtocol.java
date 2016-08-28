@@ -74,4 +74,9 @@ public class MoonProtocol {
     static void sendNumpixelsMessage(Activity context, short numPixels) {
         sendShortMessage(context, (byte) 'N', numPixels);
     }
+
+    static void sendSetFastMessage(Activity context, boolean fast) {
+        sendByteMessage(context, (byte) '!', fast ? (byte) 1 : (byte) 0);
+    }
+
 }

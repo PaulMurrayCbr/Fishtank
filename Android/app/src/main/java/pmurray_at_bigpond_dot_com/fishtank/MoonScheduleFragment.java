@@ -7,8 +7,10 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CompoundButton;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.ToggleButton;
 
 import pmurray_at_bigpond_dot_com.arddrive.R;
 
@@ -21,6 +23,7 @@ public class MoonScheduleFragment extends Fragment {
     TextView moonriseValue;
     TextView moontimeValue;
     TextView moonsetValue;
+    ToggleButton moonFast;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -35,6 +38,7 @@ public class MoonScheduleFragment extends Fragment {
         moonriseValue = (TextView) rootView.findViewById(R.id.moonriseBarValue);
         moontimeValue = (TextView) rootView.findViewById(R.id.moonTimeBarValue);
         moonsetValue = (TextView) rootView.findViewById(R.id.moonsetBarValue);
+        moonFast = (ToggleButton) rootView.findViewById(R.id.moonFastTime);
 
         moonriseBar.setMax(24 * 60);
         moonriseBar.setProgress(6 * 60);
@@ -91,6 +95,13 @@ public class MoonScheduleFragment extends Fragment {
             }
 
             public void onStopTrackingTouch(SeekBar seekBar) {
+            }
+        });
+
+        moonFast.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                MoonProtocol.sendSetFastMessage(getActivity(), b);
             }
         });
 
