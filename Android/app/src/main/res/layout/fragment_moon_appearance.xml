@@ -1,13 +1,90 @@
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@drawable/round_border"
+    android:drawablePadding="3dp"
+    android:padding="3dp"
+    android:stretchColumns="1"
     tools:context="pmurray_at_bigpond_dot_com.fishtank.MoonAppearanceFragment">
 
-    <!-- TODO: Update blank fragment layout -->
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="@string/hello_moon_appearance_fragment" />
+    <TableRow>
+        <TextView
+            android:id="@+id/stripLengthPickerLabel"
+            android:background="@drawable/round_border"
+            android:drawablePadding="3dp"
+            android:padding="3dp"
+            android:text="@string/strip_length" />
 
-</FrameLayout>
+        <NumberPicker
+            android:id="@+id/stripLengthPicker"
+            android:background="@drawable/round_border"
+            android:drawablePadding="3dp"
+            android:padding="3dp" />
+    </TableRow>
+
+    <TableRow>
+        <TextView
+            android:id="@+id/moonBrightnessBarLabel"
+            android:background="@drawable/round_border"
+            android:drawablePadding="3dp"
+            android:padding="3dp"
+            android:text="@string/moon_brightness" />
+
+        <SeekBar
+            android:id="@+id/moonBrightnessBar"
+            android:background="@drawable/round_border"
+            android:drawablePadding="3dp"
+            android:padding="3dp" />
+
+        <TextView
+            android:id="@+id/moonBrightnessBarValue"
+            android:background="@drawable/round_border"
+            android:drawablePadding="3dp"
+            android:padding="3dp"
+            />
+    </TableRow>
+
+    <TableRow>
+        <TextView
+            android:id="@+id/moonWidthBarLabel"
+            android:background="@drawable/round_border"
+            android:drawablePadding="3dp"
+            android:padding="3dp"
+            android:text="@string/moon_width" />
+
+        <SeekBar
+            android:id="@+id/moonWidthBar"
+            android:background="@drawable/round_border"
+            android:drawablePadding="3dp"
+            android:padding="3dp" />
+
+        <TextView
+            android:id="@+id/moonWidthBarValue"
+            android:background="@drawable/round_border"
+            android:drawablePadding="3dp"
+            android:padding="3dp"
+            />
+    </TableRow>
+
+
+    <!-- https://android-arsenal.com/details/1/1693 -->
+
+    <com.flask.colorpicker.ColorPickerView
+        android:id="@+id/color_picker_view"
+
+        alphaSliderView="@+id/v_alpha_slider"
+        lightnessSliderView="@+id/v_lightness_slider"
+        android:layout_width="512dp"
+        android:layout_height="512dp"
+        android:background="@drawable/round_border"
+        android:drawablePadding="3dp"
+        android:padding="3dp"
+        app:alphaSlider="false"
+        app:density="24"
+        app:lightnessSlider="false"
+        app:wheelType="FLOWER" />
+    />
+
+</TableLayout>

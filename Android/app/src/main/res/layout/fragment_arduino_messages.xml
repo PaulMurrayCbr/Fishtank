@@ -2,12 +2,20 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="pmurray_at_bigpond_dot_com.arddrive.ArduinoMessagesFragment">
+    tools:context="pmurray_at_bigpond_dot_com.arddrive.ArduinoMessagesFragment"
 
-    <!-- TODO: Update blank fragment layout -->
-    <TextView
-        android:layout_width="match_parent"
+    android:background="@drawable/round_border"
+    android:drawablePadding="3dp"
+    android:padding="3dp"     >
+
+    <ListView
+
+        android:id="@+id/arduinoMessageList"
+
+        android:layout_width="wrap_content"
         android:layout_height="match_parent"
-        android:text="@string/hello_blank_fragment" />
 
+        android:background="@drawable/round_border"
+        android:drawablePadding="3dp"
+        android:padding="3dp" />
 </FrameLayout>
