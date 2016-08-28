@@ -15,7 +15,9 @@ public class MoonScheduleFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_moon_schedule, container, false);
+
+        View rootView = inflater.inflate(R.layout.fragment_moon_schedule, container, false);
+        return rootView;
     }
 
     @Override

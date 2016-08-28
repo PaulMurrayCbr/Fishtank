@@ -24,7 +24,7 @@
 
     </android.support.design.widget.AppBarLayout>
 
-    <RelativeLayout
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@drawable/round_border"
@@ -33,27 +33,36 @@
         android:drawablePadding="3dp"
         android:id="@+id/mainwindow"
         android:layout_below="@id/appbar"
+
+        android:orientation="horizontal"
+        android:weightSum="100"
         >
+
+        <ListView
+            android:id="@+id/broadcastList"
+
+            android:background="@drawable/round_border"
+            android:padding="3dp"
+            android:drawablePadding="3dp"
+
+            android:layout_height="match_parent"
+            android:layout_width="wrap_content"
+            android:layout_weight="50"
+            />
 
         <fragment xmlns:android="http://schemas.android.com/apk/res/android"
             android:id="@+id/fragment"
-            android:name="pmurray_at_bigpond_dot_com.fishtank.MoonControllerFragment"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@drawable/round_border"
-            android:padding="3dp"
-            android:drawablePadding="3dp"
-            android:layout_alignParentTop="true"
-            />
 
-        <ListView
-            android:layout_width="match_parent"
-            android:layout_below="@id/fragment"
-            android:layout_alignParentBottom="true"
             android:background="@drawable/round_border"
             android:padding="3dp"
             android:drawablePadding="3dp"
-            android:id="@+id/broadcastList"
-            android:layout_height="wrap_content" />
-    </RelativeLayout>
+
+            android:name="pmurray_at_bigpond_dot_com.fishtank.MoonControllerFragment"
+
+            android:layout_height="match_parent"
+            android:layout_width="wrap_content"
+            android:layout_weight="50"
+            tools:layout="@layout/fragment_moon_controller" />
+
+    </LinearLayout>
 </RelativeLayout>

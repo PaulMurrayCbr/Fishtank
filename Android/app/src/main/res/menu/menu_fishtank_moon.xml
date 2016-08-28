@@ -1,0 +1,20 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="pmurray_at_bigpond_dot_com.fishtank.FishtankMoon">
+    <item
+        android:id="@+id/action_select_device"
+        android:orderInCategory="100"
+        android:title="@string/action_select_device"
+        android:titleCondensed="@string/action_select_device_condensed"
+        android:icon="@android:drawable/stat_sys_data_bluetooth"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/action_get_arduino_status"
+        android:orderInCategory="50"
+        android:title="@string/action_get_arduino_status"
+        android:titleCondensed="@string/action_get_arduino_status_condensed"
+        android:icon="@android:drawable/stat_notify_sync"
+        app:showAsAction="ifRoom" />
+
+</menu>

@@ -1,24 +1,36 @@
 <resources>
     <string name="app_name">Fishtank Moon</string>
-    <string name="action_select_device">Select device</string>
-    <string name="action_select_device_condensed">Device</string>
+
+    <!-- arduino bluetooth service -->
+
     <string name="bluetoothRationale">To connect to the arduino bluetooth, this device needs bluetooth access</string>
     <string name="bluetoothAdminRationale">To find bluetooth devices, this device needs bluetooth admin access</string>
     <string name="bluetoothRefused">Bluetooth access not granted</string>
     <string name="permissionRefused">Permission not granted</string>
     <string name="activityUnsuccessful">Unsuccessful</string>
 
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
-    <string name="hello_moon_controller_fragment">Moon controller fragment</string>
-    <string name="hello_moon_schedule_fragment">Moon schedule fragment</string>
-    <string name="hello_moon_appearance_fragment">Moon appearance fragment</string>
+    <!--main activity -->
+
+    <string name="title_activity_fishtank_moon">Fishtank Moon</string>
+    <string name="action_get_arduino_status">Refresh arduino status</string>
+    <string name="action_get_arduino_status_condensed">Refresh</string>
+    <string name="action_select_device">Select device</string>
+    <string name="action_select_device_condensed">Device</string>
+    <string name="section_format">Hello World from section: %1$d</string>
 
     <string name="action_moon_apperance_tab">Moon appearance</string>
     <string name="action_moon_apperance_tab_condensed">Appearance</string>
     <string name="action_moon_schedule_tab">Moon schedule</string>
     <string name="action_moon_schedule_tab_condensed">Schedule</string>
 
-    <string name="action_moon_get_status">Refresh arduino status</string>
-    <string name="action_moon_get_status_condensed">Refresh</string>
+    <!-- moon schedule -->
+    <string name="hello_moon_schedule_fragment">Moon schedule fragment</string>
+
+    <!-- moon appearance -->
+    <string name="hello_moon_appearance_fragment">Moon appearance fragment</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+
+
 </resources>
