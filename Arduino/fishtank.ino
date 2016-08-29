@@ -1,4 +1,4 @@
-#define DEBUG
+//#define DEBUG
 
 #ifdef DEBUG
 #define logp(s) Serial.print(s)
@@ -17,20 +17,6 @@ const int DS3232_I2C_ADDRESS = 0x68;
 
 const long SECSPERDAY = 60L * 60L * 24L;
 
-#ifdef DEBUG
-void dumpLong(uint32_t l) {
-  Serial.print(' ');
-  Serial.print(l / (60L*60L));
-  Serial.print(':');
-  Serial.print((l / 60L)%60L);
-  Serial.print(':');
-  Serial.print(l%60L);
-  Serial.print(' ');
-}
-#else
-#define dumpLong(l)
-#endif
-
 class ClockStuff {
   private:
     long timeofdaySec;
@@ -38,7 +24,6 @@ class ClockStuff {
     long timeofdayOffsetSec = 0;
 
   public:
-
     const uint32_t fastTickMs = 121L;
     const uint32_t slowTickMs = 60L * 616L; // one minute golden ratio
 
@@ -185,7 +170,7 @@ class MoonStuff {
       drawMoon();
     }
 
-    void setTimeSec(uint32_t _timeOfDaySec) {
+    void tick(uint32_t _timeOfDaySec) {
       timeOfDaySec = _timeOfDaySec;
       drawMoon();
     }
@@ -195,22 +180,10 @@ class MoonStuff {
 
       long tt = (timeOfDaySec - moonriseSec + SECSPERDAY * 2) % SECSPERDAY;
 
-      logp("moonriseSec ");
-      logln(moonriseSec);
-      logp("timeOfDaySec ");
-      logln(timeOfDaySec);
-      logp("moonsetSec ");
-      logln(moonsetSec);
-      logp("nightLenSec ");
-      logln(nightLenSec);
-
-      logp("time since moonrise Min ");
-      logln(tt / 60);
-
       if (tt <= nightLenSec) {
         float moonCenter = (float) tt / nightLenSec * pixels.numPixels();
 
-        for (int i = moonCenter - moonWidth ; i <= moonCenter + moonWidth ; i ++ ) {
+        for (int i = moonCenter - moonWidth - 2; i <= moonCenter + moonWidth + 2; i ++ ) {
           if (i < 0 || i >= pixels.numPixels()) continue;
 
           float pp = (i - moonCenter) / ((float)moonWidth / 2);
@@ -602,16 +575,13 @@ class BtWriter {
 
       if (bufCt > 0) {
         buf[bufCt] = '\0';
-        logp("writing to BT: ");
 
         for (int i = 0; i < bufCt; i++) {
-          logp(buf[i]);
           out.write(buf[i]);
           delay(100);
         }
 
         bufCt = 0;
-        logln();
       }
       out.flush();
     }
@@ -626,7 +596,7 @@ class MoonClock : public ClockStuff {
     MoonClock(MoonStuff &moonStuff) : moonStuff(moonStuff) {}
 
     void newTime(long calculatedTimeSec) {
-      moonStuff.setTimeSec(calculatedTimeSec);
+      moonStuff.tick(calculatedTimeSec);
     }
 };
 
@@ -660,9 +630,6 @@ class MoonController : public BtReader::Callback {
 
     uint8_t asByte(byte *buf) {
       uint8_t v = buf[1];
-      logp(' ');
-      logp(v);
-      logp(' ');
       return v;
     }
 
@@ -673,25 +640,16 @@ class MoonController : public BtReader::Callback {
         v |= ((uint32_t)buf[i]) & 0x000000FFL;
       }
 
-      logp(' ');
-      logp(v);
-      logp(' ');
       return v;
     }
 
     uint32_t asLong(byte *buf) {
-      logln();
       uint32_t v = 0;
       for (int i = 1; i <= 4; i++) {
         v <<= 8;
         v |= ((uint32_t)buf[i]) & 0x000000FFL;
       }
 
-      logp(' ');
-      logp(v);
-      logp(" ");
-      dumpLong(v);
-      logp(' ');
       return v;
     }
 

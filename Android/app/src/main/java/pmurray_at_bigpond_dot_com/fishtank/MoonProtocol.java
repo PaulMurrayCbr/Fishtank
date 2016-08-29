@@ -144,13 +144,13 @@ public class MoonProtocol {
         }
         info.moonBright = msg[8];
         for(int i = 9;i<13;i++) {
-            info.moonrise = (short)((info.moonrise<<8) | (((int)msg[i]) & 0xFF));
+            info.moonrise = (int)((info.moonrise<<8) | (((int)msg[i]) & 0xFF));
         }
         for(int i = 13;i<17;i++) {
-            info.moonset = (short)((info.moonset<<8) | (((int)msg[i]) & 0xFF));
+            info.moonset = (int)((info.moonset<<8) | (((int)msg[i]) & 0xFF));
         }
         for(int i = 17;i<21;i++) {
-            info.time = (short)((info.time<<8) | (((int)msg[i]) & 0xFF));
+            info.time = (int)((info.time<<8) | (((int)msg[i]) & 0xFF));
         }
         info.fast = (msg[21] & 1) != 0;
 
