@@ -17,16 +17,31 @@ const int DS3232_I2C_ADDRESS = 0x68;
 
 const long SECSPERDAY = 60L * 60L * 24L;
 
+#ifdef DEBUG
+void dumpLong(uint32_t l) {
+  Serial.print(' ');
+  Serial.print(l / (60L*60L));
+  Serial.print(':');
+  Serial.print((l / 60L)%60L);
+  Serial.print(':');
+  Serial.print(l%60L);
+  Serial.print(' ');
+}
+#else
+#define dumpLong(l)
+#endif
+
 class ClockStuff {
+  private:
+    long timeofdaySec;
+    long prevTimeofdaySec;
+    long timeofdayOffsetSec = 0;
+
   public:
 
-    uint32_t ms;
-
     const uint32_t fastTickMs = 121L;
-    const uint32_t slowTickMs = 60L * 616L; // golden ratio
+    const uint32_t slowTickMs = 60L * 616L; // one minute golden ratio
 
-    long timeofdaySec; // 60 * 24
-    long timeofdayOffsetSec = 0;
 
 #ifdef DEBUG
     boolean fast = true;
@@ -47,11 +62,12 @@ class ClockStuff {
     void setup() {
       Wire.begin();
       tick();
-      ms = millis();
     }
 
     void loop() {
-      if (millis() - ms > fast ? fastTickMs : slowTickMs) {
+       static uint32_t ms;
+
+      if ((millis()) - ms > (fast ? fastTickMs : slowTickMs)) {
         tick();
         ms = millis();
       }
@@ -59,7 +75,11 @@ class ClockStuff {
 
     void setTime(long targetTime) {
       timeofdayOffsetSec = (SECSPERDAY * 2 + targetTime - timeofdaySec) % SECSPERDAY;
-      newTime((timeofdaySec + timeofdayOffsetSec) % SECSPERDAY);
+      newTime(getTime());
+    }
+
+    uint32_t getTime() {
+      return (timeofdaySec + timeofdayOffsetSec) % SECSPERDAY;
     }
 
     void setFast(boolean f) {
@@ -78,16 +98,15 @@ class ClockStuff {
       byte minute     = bcdToDec(Wire.read());
       byte hour       = bcdToDec(Wire.read() & 0x3f);
 
-      long prevTimeofdaySec = timeofdaySec;
-
       timeofdaySec = ((long)hour) * 60L * 60L + ((long)minute) * 60L + (long) second;
 
       if (fast) {
-        timeofdaySec = (timeofdaySec * 24 * 60 * 2) % SECSPERDAY;
+        timeofdaySec = (timeofdaySec * 24 * 60 / 5) % SECSPERDAY; // compress one day into five minutes
       }
 
       if (timeofdaySec != prevTimeofdaySec) {
-        newTime((timeofdaySec + timeofdayOffsetSec) % SECSPERDAY);
+        newTime(getTime());
+        prevTimeofdaySec = timeofdaySec;
       }
     }
 
@@ -99,12 +118,12 @@ class MoonStuff {
 
     const byte pin;
     const Adafruit_NeoPixel pixels;
-    long timeofdaySec = 0;
     int moonWidth;
     float r, g, b;
     long moonriseSec = 16L * 60L * 60L;
     long moonsetSec = 4L * 60L * 60L;
     long nightLenSec;
+    uint32_t timeOfDaySec;
 
     MoonStuff(byte pin) : pin(pin), pixels(12, pin, NEO_GRB + NEO_KHZ800) {
       deriveNightlen();
@@ -121,14 +140,6 @@ class MoonStuff {
       setBrightness(4);
       pixels.begin();
       drawMoon();
-
-      logp("moonriseSec  IS ");
-      logln(moonriseSec);
-      logp("moonsetSec IS ");
-      logln(moonsetSec);
-      logp("nightLenSec IS ");
-      logln(nightLenSec);
-
     }
 
     void loop() {
@@ -162,29 +173,39 @@ class MoonStuff {
       drawMoon();
     }
 
-    void setMoonriseSec(int _moonriseSec) {
+    void setMoonriseSec(long _moonriseSec) {
       moonriseSec = _moonriseSec;
       deriveNightlen();
       drawMoon();
     }
 
-    void setMoonsetSec(int _moonsetSec) {
+    void setMoonsetSec(long _moonsetSec) {
       moonsetSec = _moonsetSec;
       deriveNightlen();
       drawMoon();
     }
 
-    void setTimeSec(long s) {
-      if (s != timeofdaySec) {
-        timeofdaySec = s;
-        drawMoon();
-      }
+    void setTimeSec(uint32_t _timeOfDaySec) {
+      timeOfDaySec = _timeOfDaySec;
+      drawMoon();
     }
 
     void drawMoon() {
       pixels.clear();
 
-      long tt = (timeofdaySec - moonriseSec + SECSPERDAY * 2) % SECSPERDAY;
+      long tt = (timeOfDaySec - moonriseSec + SECSPERDAY * 2) % SECSPERDAY;
+
+      logp("moonriseSec ");
+      logln(moonriseSec);
+      logp("timeOfDaySec ");
+      logln(timeOfDaySec);
+      logp("moonsetSec ");
+      logln(moonsetSec);
+      logp("nightLenSec ");
+      logln(nightLenSec);
+
+      logp("time since moonrise Min ");
+      logln(tt / 60);
 
       if (tt <= nightLenSec) {
         float moonCenter = (float) tt / nightLenSec * pixels.numPixels();
@@ -638,7 +659,7 @@ class MoonController : public BtReader::Callback {
     }
 
     uint8_t asByte(byte *buf) {
-      uint8_t v = (uint8_t)buf[1];
+      uint8_t v = buf[1];
       logp(' ');
       logp(v);
       logp(' ');
@@ -646,7 +667,12 @@ class MoonController : public BtReader::Callback {
     }
 
     uint16_t asInt(byte *buf) {
-      uint16_t v = ((uint16_t)(buf[1]) << 8) | ((uint16_t)(buf[2]) << 0);
+      uint16_t v = 0;
+      for (int i = 1; i <= 2; i++) {
+        v <<= 8;
+        v |= ((uint32_t)buf[i]) & 0x000000FFL;
+      }
+
       logp(' ');
       logp(v);
       logp(' ');
@@ -654,9 +680,17 @@ class MoonController : public BtReader::Callback {
     }
 
     uint32_t asLong(byte *buf) {
-      uint32_t v = ((uint32_t)(buf[1]) << 24) | ((uint32_t)(buf[2]) << 16) | ((uint32_t)(buf[3]) << 8) | ((uint32_t)(buf[4]) << 0);
+      logln();
+      uint32_t v = 0;
+      for (int i = 1; i <= 4; i++) {
+        v <<= 8;
+        v |= ((uint32_t)buf[i]) & 0x000000FFL;
+      }
+
       logp(' ');
       logp(v);
+      logp(" ");
+      dumpLong(v);
       logp(' ');
       return v;
     }
@@ -782,10 +816,11 @@ class MoonController : public BtReader::Callback {
       buf.moonset[1] = moon.moonsetSec >> 16;
       buf.moonset[2] = moon.moonsetSec >> 8;
       buf.moonset[3] = moon.moonsetSec >> 0;
-      buf.time[0] = clock.timeofdaySec >> 24;
-      buf.time[1] = clock.timeofdaySec >> 16;
-      buf.time[2] = clock.timeofdaySec >> 8;
-      buf.time[3] = clock.timeofdaySec >> 0;
+      uint32_t tod = clock.getTime();
+      buf.time[0] = tod >> 24;
+      buf.time[1] = tod >> 16;
+      buf.time[2] = tod >> 8;
+      buf.time[3] = tod >> 0;
       buf.flags[0] = (clock.fast ? 1 : 0);
 
       writer.write((void *)&buf, 0, sizeof(buf));
