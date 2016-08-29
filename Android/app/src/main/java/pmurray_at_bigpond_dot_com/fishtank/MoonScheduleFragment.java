@@ -1,9 +1,13 @@
 package pmurray_at_bigpond_dot_com.fishtank;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.LocalBroadcastManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,7 +16,10 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.ToggleButton;
 
+import pmurray_at_bigpond_dot_com.arddrive.BluetoothService;
 import pmurray_at_bigpond_dot_com.arddrive.R;
+
+import static pmurray_at_bigpond_dot_com.arddrive.BluetoothService.addBroadcastsNotIncludingBytes;
 
 
 public class MoonScheduleFragment extends Fragment {
@@ -113,4 +120,33 @@ public class MoonScheduleFragment extends Fragment {
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
     }
+
+    final BroadcastReceiver broadcastReciever = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if(!BluetoothService.BROADCAST_MESSAGE_RECEIVED.equals(intent.getAction())) return;
+            MoonProtocol.InfoPacket info = MoonProtocol.decodeInfo(intent);
+            if(info == null) return;
+
+            moonriseBar.setProgress( (info.moonrise/60 + 12*60) % (24*60));
+            moonsetBar.setProgress( (info.moonset/60 + 12*60) % (24*60));
+            moontimeBar.setProgress( (info.time/60 + 12*60) % (24*60));
+            moonFast.setChecked(info.fast);
+        }
+    };
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        IntentFilter f = new IntentFilter();
+        f.addAction(BluetoothService.BROADCAST_MESSAGE_RECEIVED);
+        LocalBroadcastManager.getInstance(getActivity().getApplicationContext()).registerReceiver(broadcastReciever, f);
+    }
+
+    @Override
+    public void onStop() {
+        LocalBroadcastManager.getInstance(getActivity().getApplicationContext()).unregisterReceiver(broadcastReciever);
+        super.onStop();
+    }
+
 }

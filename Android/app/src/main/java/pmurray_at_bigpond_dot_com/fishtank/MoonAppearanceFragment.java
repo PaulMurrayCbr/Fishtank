@@ -1,9 +1,13 @@
 package pmurray_at_bigpond_dot_com.fishtank;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.LocalBroadcastManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,6 +18,7 @@ import android.widget.TextView;
 import com.flask.colorpicker.ColorPickerView;
 import com.flask.colorpicker.OnColorSelectedListener;
 
+import pmurray_at_bigpond_dot_com.arddrive.BluetoothService;
 import pmurray_at_bigpond_dot_com.arddrive.R;
 
 import static pmurray_at_bigpond_dot_com.arddrive.BluetoothService.startActionSendMessage;
@@ -110,6 +115,36 @@ public class MoonAppearanceFragment extends Fragment {
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
+    }
+
+    final BroadcastReceiver broadcastReciever = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if(!BluetoothService.BROADCAST_MESSAGE_RECEIVED.equals(intent.getAction())) return;
+            MoonProtocol.InfoPacket info = MoonProtocol.decodeInfo(intent);
+            if(info == null) return;
+
+            stripLengthPicker.setValue(info.numPixels);
+            brightnessBar.setProgress(info.moonBright);
+            widthBar.setProgress(info.moonWidth);
+            colourPicker.setColor(info.rgb, true);
+            ColorPickerView colourPicker;
+
+        }
+    };
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        IntentFilter f = new IntentFilter();
+        f.addAction(BluetoothService.BROADCAST_MESSAGE_RECEIVED);
+        LocalBroadcastManager.getInstance(getActivity().getApplicationContext()).registerReceiver(broadcastReciever, f);
+    }
+
+    @Override
+    public void onStop() {
+        LocalBroadcastManager.getInstance(getActivity().getApplicationContext()).unregisterReceiver(broadcastReciever);
+        super.onStop();
     }
 
 }

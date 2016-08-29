@@ -1,6 +1,7 @@
 package pmurray_at_bigpond_dot_com.fishtank;
 
 import android.app.Activity;
+import android.content.Intent;
 
 import pmurray_at_bigpond_dot_com.arddrive.BluetoothService;
 
@@ -8,6 +9,32 @@ import pmurray_at_bigpond_dot_com.arddrive.BluetoothService;
  * Created by pmurray on 27/08/2016.
  */
 public class MoonProtocol {
+
+    public static class InfoPacket {
+        /*
+        struct StatusBuffer {
+          byte messageMark[1];  // 0-1
+          byte rgb[3];          // 1-4
+          byte numpixels[2];    // 4-6
+          byte moonWidth[2];    // 6-8
+          byte moonBright[1];   // 8-9
+          byte moonrise[4];     // 9-13
+          byte moonset[4];      // 13-17
+          byte time[4];         // 17-21
+          byte flags[1];        // 21-22
+        };
+        */
+        byte r, g, b;
+        int rgb;
+        short numPixels;
+        short moonWidth;
+        byte moonBright;
+        int moonrise;
+        int moonset;
+        int time;
+        boolean fast;
+    }
+
     static void sendRefreshStatusMessage(Activity context) {
         byte[] msg = new byte[1];
         msg[0] = '?';
@@ -78,5 +105,58 @@ public class MoonProtocol {
     static void sendSetFastMessage(Activity context, boolean fast) {
         sendByteMessage(context, (byte) '!', fast ? (byte) 1 : (byte) 0);
     }
+
+    static InfoPacket decodeInfo(Intent intent) {
+        if (intent == null) return null;
+        if (!BluetoothService.BROADCAST_MESSAGE_RECEIVED.equals(intent.getAction())) return null;
+        byte[] msg = intent.getByteArrayExtra(BluetoothService.EXTRA_BYTES);
+        if (msg == null) return null;
+        if (msg.length != 22) return null;
+        InfoPacket info = new InfoPacket();
+
+        /*
+        struct StatusBuffer {
+          byte messageMark[1];  // 0-1
+          byte rgb[3];          // 1-4
+          byte numpixels[2];    // 4-6
+          byte moonWidth[2];    // 6-8
+          byte moonBright[1];   // 8-9
+          byte moonrise[4];     // 9-13
+          byte moonset[4];      // 13-17
+          byte time[4];         // 17-21
+          byte flags[1];        // 21-22
+        };
+        */
+
+        info.r = msg[1];
+        info.g = msg[2];
+        info.b = msg[3];
+        for(int i = 1;i<4;i++) {
+            info.rgb = (short)((info.rgb<<8) | (((int)msg[i]) & 0xFF));
+
+        }
+        for(int i = 4;i<6;i++) {
+            info.numPixels = (short)((info.numPixels<<8) | (((int)msg[i]) & 0xFF));
+
+        }
+        for(int i = 6;i<8;i++) {
+            info.moonWidth = (short)((info.moonWidth<<8) | (((int)msg[i]) & 0xFF));
+        }
+        info.moonBright = msg[8];
+        for(int i = 9;i<13;i++) {
+            info.moonrise = (short)((info.moonrise<<8) | (((int)msg[i]) & 0xFF));
+        }
+        for(int i = 13;i<17;i++) {
+            info.moonset = (short)((info.moonset<<8) | (((int)msg[i]) & 0xFF));
+        }
+        for(int i = 17;i<21;i++) {
+            info.time = (short)((info.time<<8) | (((int)msg[i]) & 0xFF));
+        }
+        info.fast = (msg[21] & 1) != 0;
+
+        return info;
+
+    }
+
 
 }
