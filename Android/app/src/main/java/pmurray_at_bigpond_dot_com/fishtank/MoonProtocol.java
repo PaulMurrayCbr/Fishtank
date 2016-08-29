@@ -11,7 +11,7 @@ public class MoonProtocol {
     static void sendRefreshStatusMessage(Activity context) {
         byte[] msg = new byte[1];
         msg[0] = '?';
-        BluetoothService.startActionSendMessage(context, msg);
+        BluetoothService.startActionSendMessage(context, (int) '?', msg);
     }
 
     static void sendChangeColorMessage(Activity context, byte r, byte g, byte b) {
@@ -20,14 +20,14 @@ public class MoonProtocol {
         msg[1] = r;
         msg[2] = g;
         msg[3] = b;
-        BluetoothService.startActionSendMessage(context, msg);
+        BluetoothService.startActionSendMessage(context, (int) 'C', msg);
     }
 
     private static void sendByteMessage(Activity context, byte action, byte n) {
         byte[] msg = new byte[2];
         msg[0] = action;
         msg[1] = n;
-        BluetoothService.startActionSendMessage(context, msg);
+        BluetoothService.startActionSendMessage(context, (int) action, msg);
     }
 
 
@@ -36,7 +36,7 @@ public class MoonProtocol {
         msg[0] = action;
         msg[1] = (byte) (n >> 8);
         msg[2] = (byte) (n >> 0);
-        BluetoothService.startActionSendMessage(context, msg);
+        BluetoothService.startActionSendMessage(context, (int) action, msg);
     }
 
     private static void sendTimeMessage(Activity context, byte action, int time) {
@@ -48,7 +48,7 @@ public class MoonProtocol {
         msg[2] = (byte) (time >> 16);
         msg[3] = (byte) (time >> 8);
         msg[4] = (byte) (time >> 0);
-        BluetoothService.startActionSendMessage(context, msg);
+        BluetoothService.startActionSendMessage(context, (int) action, msg);
     }
 
     static void sendSetTimeofdayMessage(Activity context, int time) {

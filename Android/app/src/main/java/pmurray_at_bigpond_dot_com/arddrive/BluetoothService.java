@@ -16,6 +16,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.UUID;
 
@@ -55,6 +56,7 @@ public class BluetoothService extends Service {
     public static final UUID SERIAL_BOARD_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
 
     public static final String EXTRA_UUID = "pmurray_at_bigpond_dot_com.arddrive.extra.EXTRA_UUID";
+    public static final String EXTRA_CATEGORY = "pmurray_at_bigpond_dot_com.arddrive.extra.EXTRA_CATGEORY";
 
     public static final String EXTRA_BYTES = "pmurray_at_bigpond_dot_com.arddrive.extra.EXTRA_BYTES";
     public static final String EXTRA_SERIAL_RX = "pmurray_at_bigpond_dot_com.arddrive.extra.EXTRA_SERIAL_RX";
@@ -98,7 +100,10 @@ public class BluetoothService extends Service {
         final byte[] checkbytes = new byte[3];
 
         final BluetoothDevice d;
-        MessageBuilder(BluetoothDevice d) { this.d = d;}
+
+        MessageBuilder(BluetoothDevice d) {
+            this.d = d;
+        }
 
         byte[] makeMsg(byte[] bytes) {
             checksum.clear();
@@ -109,9 +114,9 @@ public class BluetoothService extends Service {
                 bs.write('<');
                 bs.write(Base64.encode(bytes, Base64.DEFAULT));
                 bs.write('#');
-                checkbytes[0] = (byte)(checksum.checksum >>16);
-                checkbytes[1] = (byte)(checksum.checksum >>8);
-                checkbytes[2] = (byte)(checksum.checksum >>0);
+                checkbytes[0] = (byte) (checksum.checksum >> 16);
+                checkbytes[1] = (byte) (checksum.checksum >> 8);
+                checkbytes[2] = (byte) (checksum.checksum >> 0);
 
                 bs.write(Base64.encode(checkbytes, Base64.DEFAULT));
                 bs.write('>');
@@ -208,7 +213,7 @@ public class BluetoothService extends Service {
                         if (decodedChecksum.length != 3) {
                             broadcastBadMessage(d, message, checksum.checksum, MessageFault.incorrect_checksum);
                         } else {
-                            int check = (((int)decodedChecksum[0] << 16)&0xFF0000) | (((int)decodedChecksum[1] << 8)&0xFF00) | (((int)decodedChecksum[2])&0xFF);
+                            int check = (((int) decodedChecksum[0] << 16) & 0xFF0000) | (((int) decodedChecksum[1] << 8) & 0xFF00) | (((int) decodedChecksum[2]) & 0xFF);
                             if (checksum.checksum != check) {
                                 broadcastBadMessage(d, message, checksum.checksum, MessageFault.incorrect_checksum);
                             } else {
@@ -236,12 +241,29 @@ public class BluetoothService extends Service {
     }
 
 
+    static class Pending {
+        final int category;
+        final byte[] data;
+
+        public Pending(int category, byte[] data) {
+            this.category = category;
+            this.data = data;
+        }
+
+        boolean match(int category) {
+            return category != -1 && this.category != -1 && category == this.category;
+        }
+    }
+
+    ;
+
     protected class Connection implements Runnable {
         private final BluetoothDevice d;
         private final UUID uuid;
         private BluetoothSocket socket = null;
 
-        private final LinkedList<byte[]> pending = new LinkedList<byte[]>();
+
+        private final LinkedList<Pending> pending = new LinkedList<Pending>();
         private byte[] buffer = new byte[1024 + 5]; // max bluetooth message is 1024 bytes. 5 is slop.
 
         private final MessageParser parser;
@@ -254,16 +276,24 @@ public class BluetoothService extends Service {
             this.messageBuilder = new MessageBuilder(d);
         }
 
-        void sendMessage(byte[] bytes) {
-            send(messageBuilder.makeMsg(bytes));
+        void sendMessage(int category, byte[] bytes) {
+            send(category, messageBuilder.makeMsg(bytes));
         }
 
-        void send(byte[] bytes) {
-            synchronized (this) {
+        void send(int category, byte[] bytes) {
+            synchronized (pending) {
                 if (socket == null) {
                     broadcastBytesNotSent(bytes);
                 } else {
-                    pending.add(bytes);
+                    if (category != -1) {
+                        for (Iterator<Pending> i = pending.iterator(); i.hasNext(); ) {
+                            if (i.next().match(category)) {
+                                i.remove();
+                            }
+                        }
+                    }
+
+                    pending.add(new Pending(category, bytes));
                 }
             }
         }
@@ -301,7 +331,7 @@ public class BluetoothService extends Service {
                         byte[] xmit = null;
                         synchronized (pending) {
                             if (!pending.isEmpty()) {
-                                xmit = pending.removeFirst();
+                                xmit = pending.removeFirst().data;
                             }
                         }
 
@@ -349,7 +379,7 @@ public class BluetoothService extends Service {
 
                 synchronized (pending) {
                     while (!pending.isEmpty()) {
-                        broadcastBytesNotSent(pending.removeFirst());
+                        broadcastBytesNotSent(pending.removeFirst().data);
                     }
                 }
             }
@@ -404,7 +434,7 @@ public class BluetoothService extends Service {
         return f;
     }
 
-    public static IntentFilter addBluetoothBroadcasts(IntentFilter f)  {
+    public static IntentFilter addBluetoothBroadcasts(IntentFilter f) {
         f.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
         f.addAction(BluetoothDevice.ACTION_ACL_DISCONNECT_REQUESTED);
         f.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
@@ -433,39 +463,42 @@ public class BluetoothService extends Service {
         context.startService(intent);
     }
 
-    public static void startActionSendBytes(Context context, byte[] bytes) {
-        startActionSendBytes(context, bytes, 0, bytes.length);
+    public static void startActionSendBytes(Context context, int category, byte[] bytes) {
+        startActionSendBytes(context, category, bytes, 0, bytes.length);
     }
 
-    public static void startActionSendBytes(Context context, byte[] bytes, int offs, int len) {
+    public static void startActionSendBytes(Context context, int category, byte[] bytes, int offs, int len) {
         byte[] cpy = new byte[len];
         System.arraycopy(bytes, offs, cpy, 0, len);
 
         Intent intent = new Intent(context, BluetoothService.class);
         intent.setAction(ACTION_SEND_BYTES);
         intent.putExtra(EXTRA_BYTES, cpy);
+        intent.putExtra(EXTRA_CATEGORY, category);
         context.startService(intent);
     }
 
-    public static void startActionSendMessage(Context context, String message) {
+    public static void startActionSendMessage(Context context, int category, String message) {
         Intent intent = new Intent(context, BluetoothService.class);
         intent.setAction(ACTION_SEND_MESSAGE);
         intent.putExtra(EXTRA_BYTES, message.getBytes());
+        intent.putExtra(EXTRA_CATEGORY, category);
         context.startService(intent);
     }
 
 
-    public static void startActionSendMessage(Context context, byte[] bytes) {
-        startActionSendMessage(context, bytes, 0, bytes.length);
+    public static void startActionSendMessage(Context context, int category, byte[] bytes) {
+        startActionSendMessage(context, category, bytes, 0, bytes.length);
     }
 
-    public static void startActionSendMessage(Context context, byte[] bytes, int offs, int len) {
+    public static void startActionSendMessage(Context context, int category, byte[] bytes, int offs, int len) {
         byte[] cpy = new byte[len];
         System.arraycopy(bytes, offs, cpy, 0, len);
 
         Intent intent = new Intent(context, BluetoothService.class);
         intent.setAction(ACTION_SEND_MESSAGE);
         intent.putExtra(EXTRA_BYTES, cpy);
+        intent.putExtra(EXTRA_CATEGORY, category);
         context.startService(intent);
     }
 
@@ -601,10 +634,12 @@ public class BluetoothService extends Service {
                     handleActionDisconnect();
                 } else if (ACTION_SEND_BYTES.equals(action)) {
                     final byte[] bytes = intent.getByteArrayExtra(EXTRA_BYTES);
-                    handleActionSendBytes(bytes);
+                    final int category = intent.getIntExtra(EXTRA_CATEGORY, -1);
+                    handleActionSendBytes(category, bytes);
                 } else if (ACTION_SEND_MESSAGE.equals(action)) {
                     final byte[] bytes = intent.getByteArrayExtra(EXTRA_BYTES);
-                    handleActionSendMessage(bytes);
+                    final int category = intent.getIntExtra(EXTRA_CATEGORY, -1);
+                    handleActionSendMessage(category, bytes);
                 }
             }
         } catch (RuntimeException ex) {
@@ -623,17 +658,17 @@ public class BluetoothService extends Service {
         currentConnection = null;
     }
 
-    private void handleActionSendBytes(byte[] bytes) {
+    private void handleActionSendBytes(int category, byte[] bytes) {
         if (currentConnection == null) {
             broadcastBytesNotSent(bytes);
         } else {
-            currentConnection.send(bytes);
+            currentConnection.send(category, bytes);
         }
     }
 
-    private void handleActionSendMessage(byte[] bytes) {
+    private void handleActionSendMessage(int category, byte[] bytes) {
         if (currentConnection != null) {
-            currentConnection.sendMessage(bytes);
+            currentConnection.sendMessage(category, bytes);
         }
     }
 
