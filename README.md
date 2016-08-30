@@ -23,6 +23,11 @@ The parameters can be set via bluetooth using the corresponding Android app. All
 | Bluetooth RX | Pin 8 | Bluetooth module TX |
 | Bluetooth TX | Pin 9 | Bluetooth module RX |
 
+# Links
+
+* [Youtube demo video](https://www.youtube.com/watch?v=3t9OUIRO73k)
+* [Arduino forum post](http://forum.arduino.cc/index.php?topic=421472)
+
 # License
 
 [This project is released into the public domain under the terms of the unlicense](./LICENSE).
