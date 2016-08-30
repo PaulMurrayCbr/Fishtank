@@ -4,8 +4,9 @@
  * The purpose of this class is to keep track of the time mod seconds per day with
  * a settable offset, notifying a subclass at intervals.
  * 
- * In fast mode, the subclass callback is notified about once per second. In slow mode,
- * about once per 37 seconds (1 minute / golden ratio).
+ * In fast mode, the subclass callback is notified about once per second, and the time of day
+ * completes a full 240hour cycle in five minutes. In normal mode, the calback is invoked 
+ * about once per 37 seconds (1 minute / golden ratio, obviously).
  * 
  * This class does not write the time to the DS3232 - it simply maintains an offset.
  * The reason for this is that my android app permits the time to be set with a slider,

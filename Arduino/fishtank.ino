@@ -14,6 +14,7 @@
 #include <Adafruit_NeoPixel.h>
 #include "BTComms.h"
 #include "SimpleClock.h"
+#include "Bigend.h"
 
 class MoonDrawer {
   public:
@@ -159,32 +160,19 @@ class MoonController : public BtReader::Callback {
 
     void loop() {
     }
-
+/*
     uint8_t asByte(byte *buf) {
-      uint8_t v = buf[1];
-      return v;
+      return be2byte(buf+1);
     }
 
     uint16_t asInt(byte *buf) {
-      uint16_t v = 0;
-      for (int i = 1; i <= 2; i++) {
-        v <<= 8;
-        v |= ((uint32_t)buf[i]) & 0x000000FFL;
-      }
-
-      return v;
+      return be2int(buf+1);
     }
 
     uint32_t asLong(byte *buf) {
-      uint32_t v = 0;
-      for (int i = 1; i <= 4; i++) {
-        v <<= 8;
-        v |= ((uint32_t)buf[i]) & 0x000000FFL;
-      }
-
-      return v;
+      return be2long(buf+1);
     }
-
+*/
     void gotBytes(byte *buf, int ct) {
       buf[ct] = 0;
 #ifdef DEBUG
@@ -231,22 +219,22 @@ class MoonController : public BtReader::Callback {
           moon.setColor(buf[1], buf[2], buf[3]);
           break;
         case 'T':
-          clock.setTime(asLong(buf));
+          clock.setTime(be2long(buf+1));
           break;
         case 'R':
-          moon.setMoonriseSec(asLong(buf));
+          moon.setMoonriseSec(be2long(buf+1));
           break;
         case 'S':
-          moon.setMoonsetSec(asLong(buf));
+          moon.setMoonsetSec(be2long(buf+1));
           break;
         case 'W':
-          moon.setWidth(asInt(buf));
+          moon.setWidth(be2int(buf+1));
           break;
         case 'B':
-          moon.setBrightness(asByte(buf));
+          moon.setBrightness(buf[1]);
           break;
         case 'N':
-          moon.setNumPixels(asInt(buf));
+          moon.setNumPixels(be2int(buf+1));
           break;
       }
 #ifdef DEBUG
@@ -293,24 +281,12 @@ class MoonController : public BtReader::Callback {
       buf.rgb[0] = moon.r;
       buf.rgb[1] = moon.g;
       buf.rgb[2] = moon.b;
-      buf.numpixels[0] = moon.pixels.numPixels() >> 8;
-      buf.numpixels[1] = moon.pixels.numPixels();
-      buf.moonWidth[0] = moon.moonWidth >> 8;
-      buf.moonWidth[1] = moon.moonWidth;
+      int2be(moon.pixels.numPixels(), buf.numpixels);
+      int2be(moon.moonWidth, buf.moonWidth);
       buf.moonBright[0] = moon.pixels.getBrightness();
-      buf.moonrise[0] = moon.moonriseSec >> 24;
-      buf.moonrise[1] = moon.moonriseSec >> 16;
-      buf.moonrise[2] = moon.moonriseSec >> 8;
-      buf.moonrise[3] = moon.moonriseSec >> 0;
-      buf.moonset[0] = moon.moonsetSec >> 24;
-      buf.moonset[1] = moon.moonsetSec >> 16;
-      buf.moonset[2] = moon.moonsetSec >> 8;
-      buf.moonset[3] = moon.moonsetSec >> 0;
-      uint32_t tod = clock.getTime();
-      buf.time[0] = tod >> 24;
-      buf.time[1] = tod >> 16;
-      buf.time[2] = tod >> 8;
-      buf.time[3] = tod >> 0;
+      long2be(moon.moonriseSec, buf.moonrise);
+      long2be(moon.moonsetSec, buf.moonset);
+      long2be(clock.getTime(), buf.time);
       buf.flags[0] = (clock.isFast() ? 1 : 0);
 
       writer.write((void *)&buf, 0, sizeof(buf));
